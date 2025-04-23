@@ -74,23 +74,54 @@ const Register: React.FC = () => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.card}>
-        <Text style={styles.title}>Veterinaria Ciudad Canina</Text>
-        <Text style={styles.subtitle}>Regístrate para acceder a nuestros servicios.</Text>
+      <View style={styles.phoneFrame}>
+        <View style={styles.phoneScreen}>
+          <Text style={styles.title}>Veterinaria Ciudad Canina</Text>
+          <Text style={styles.subtitle}>Regístrate para acceder a nuestros servicios.</Text>
 
-        <TextInput placeholder="Nombre completo" style={styles.input} value={user.nombre_completo} onChangeText={(text) => handleChange('nombre_completo', text)} />
-        <TextInput placeholder="Correo electrónico" style={styles.input} keyboardType="email-address" autoCapitalize="none" value={user.correo_electronico} onChangeText={(text) => handleChange('correo_electronico', text)} />
-        <TextInput placeholder="Usuario" style={styles.input} value={user.usuario} onChangeText={(text) => handleChange('usuario', text)} />
-        <TextInput placeholder="Contraseña" style={styles.input} secureTextEntry value={user.contrasena} onChangeText={(text) => handleChange('contrasena', text)} />
-        <TextInput placeholder="Verificar contraseña" style={styles.input} secureTextEntry value={user.verificarContrasena} onChangeText={(text) => handleChange('verificarContrasena', text)} />
+          <TextInput
+            placeholder="Nombre completo"
+            style={styles.input}
+            value={user.nombre_completo}
+            onChangeText={(text) => handleChange('nombre_completo', text)}
+          />
+          <TextInput
+            placeholder="Correo electrónico"
+            style={styles.input}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            value={user.correo_electronico}
+            onChangeText={(text) => handleChange('correo_electronico', text)}
+          />
+          <TextInput
+            placeholder="Usuario"
+            style={styles.input}
+            value={user.usuario}
+            onChangeText={(text) => handleChange('usuario', text)}
+          />
+          <TextInput
+            placeholder="Contraseña"
+            style={styles.input}
+            secureTextEntry
+            value={user.contrasena}
+            onChangeText={(text) => handleChange('contrasena', text)}
+          />
+          <TextInput
+            placeholder="Verificar contraseña"
+            style={styles.input}
+            secureTextEntry
+            value={user.verificarContrasena}
+            onChangeText={(text) => handleChange('verificarContrasena', text)}
+          />
 
-        <TouchableOpacity style={styles.registerButton} onPress={handleSubmit}>
-          <Text style={styles.buttonText}>Registrarse</Text>
-        </TouchableOpacity>
+          <TouchableOpacity style={styles.registerButton} onPress={handleSubmit}>
+            <Text style={styles.buttonText}>Registrarse</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity style={styles.loginButton} onPress={() => navigation.navigate('Login')}>
-          <Text style={styles.buttonText}>Iniciar Sesión</Text>
-        </TouchableOpacity>
+          <TouchableOpacity style={styles.loginButton} onPress={() => navigation.navigate('Login')}>
+            <Text style={styles.buttonText}>Iniciar Sesión</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </ScrollView>
   );
@@ -102,19 +133,31 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     padding: 20,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#D9EAFB',
     justifyContent: 'center',
   },
-  card: {
-    backgroundColor: '#fff',
-    padding: 25,
-    borderRadius: 10,
-    elevation: 4,
+  phoneFrame: {
+    width: 320,
+    height: 600,
+    backgroundColor: '#000',
+    borderRadius: 30,
+    overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    marginBottom: 30,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  phoneScreen: {
+    flex: 1,
+    width: '100%',
+    padding: 20,
+    backgroundColor: '#fff',
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   title: {
     fontSize: 24,
@@ -129,6 +172,7 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   input: {
+    width: '100%',
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 8,
@@ -141,12 +185,14 @@ const styles = StyleSheet.create({
     padding: 14,
     borderRadius: 8,
     marginTop: 10,
+    width: '100%',
   },
   loginButton: {
     backgroundColor: '#ffc107',
     padding: 14,
     borderRadius: 8,
     marginTop: 10,
+    width: '100%',
   },
   buttonText: {
     color: '#fff',
