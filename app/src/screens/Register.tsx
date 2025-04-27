@@ -5,159 +5,197 @@ import {
   TextInput,
   Alert,
   TouchableOpacity,
-  ScrollView,
   StyleSheet,
+  ScrollView,
+  ActivityIndicator,
+  ImageBackground,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { StackNavigationProp } from '@react-navigation/stack';
 
 type RootStackParamList = {
   Login: undefined;
+  Register: undefined;
 };
 
-type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+const Register = () => {
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
-interface User {
-  nombre_completo: string;
-  correo_electronico: string;
-  usuario: string;
-  contrasena: string;
-  verificarContrasena: string;
-}
-
-const Register: React.FC = () => {
-  const [user, setUser] = useState<User>({
-    nombre_completo: '',
-    correo_electronico: '',
+  const [form, setForm] = useState({
+    nombreCompleto: '',
+    correoElectronico: '',
     usuario: '',
     contrasena: '',
     verificarContrasena: '',
   });
 
-  const navigation = useNavigation<NavigationProp>();
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showPassword2, setShowPassword2] = useState(false);
 
-  const handleChange = (name: keyof User, value: string) => {
-    setUser((prevUser) => ({
-      ...prevUser,
-      [name]: value,
-    }));
+  const handleChange = (name: keyof typeof form, value: string) => {
+    setForm({ ...form, [name]: value });
+  };
+
+  const validateFields = () => {
+    const { nombreCompleto, correoElectronico, usuario, contrasena, verificarContrasena } = form;
+
+    if (!nombreCompleto || !correoElectronico || !usuario || !contrasena || !verificarContrasena) {
+      Alert.alert('Error', 'Debes completar todos los campos.');
+      return false;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(correoElectronico)) {
+      Alert.alert('Error', 'El correo electrónico no es válido.');
+      return false;
+    }
+
+    if (contrasena.length < 8) {
+      Alert.alert('Error', 'La contraseña debe tener al menos 8 caracteres.');
+      return false;
+    }
+
+    if (contrasena !== verificarContrasena) {
+      Alert.alert('Error', 'Las contraseñas no coinciden.');
+      return false;
+    }
+
+    return true;
   };
 
   const handleSubmit = async () => {
-    if (Object.values(user).some((value) => value.trim() === '')) {
-      Alert.alert('Error', 'Por favor, complete todos los campos.');
-      return;
-    }
+    if (!validateFields()) return;
 
-    if (user.contrasena !== user.verificarContrasena) {
-      Alert.alert('Error', 'Las contraseñas no coinciden.');
-      return;
-    }
-
+    setLoading(true);
     try {
-      const response = await axios.post('http://localhost:3001/api/auth/registrar', user);
-      if (response.status === 201 || response.status === 200) {
-        Alert.alert('Éxito', response.data.message, [
+      const response = await axios.post('http://192.168.10.21:3001/api/usuarios/agregar', form, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        timeout: 10000,
+      });
+
+      if (response.status === 200) {
+        Alert.alert('', 'Usuario registrado correctamente.', [
           {
-            text: 'Ir a Login',
             onPress: () => navigation.navigate('Login'),
           },
         ]);
-      } else {
-        throw new Error('Error desconocido en el registro.');
       }
-    } catch (error: any) {
-      Alert.alert(error?.response?.data?.title || 'Error', error?.response?.data?.message || 'Error al registrar el usuario.');
+    } catch (error) {
+      Alert.alert('Error', 'Hubo un problema con el servidor.');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.phoneFrame}>
-        <View style={styles.phoneScreen}>
+    <ImageBackground 
+      source={require('../screens/fondol.png')}
+      style={styles.backgroundContainer}
+      resizeMode="cover"
+    >
+      <ScrollView 
+        contentContainerStyle={styles.scrollContainer}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.formContainer}>
           <Text style={styles.title}>Veterinaria Ciudad Canina</Text>
           <Text style={styles.subtitle}>Regístrate para acceder a nuestros servicios.</Text>
 
           <TextInput
             placeholder="Nombre completo"
             style={styles.input}
-            value={user.nombre_completo}
-            onChangeText={(text) => handleChange('nombre_completo', text)}
+            value={form.nombreCompleto}
+            onChangeText={(text) => handleChange('nombreCompleto', text)}
           />
           <TextInput
             placeholder="Correo electrónico"
             style={styles.input}
             keyboardType="email-address"
             autoCapitalize="none"
-            value={user.correo_electronico}
-            onChangeText={(text) => handleChange('correo_electronico', text)}
+            value={form.correoElectronico}
+            onChangeText={(text) => handleChange('correoElectronico', text)}
           />
           <TextInput
             placeholder="Usuario"
             style={styles.input}
-            value={user.usuario}
+            autoCapitalize="none"
+            value={form.usuario}
             onChangeText={(text) => handleChange('usuario', text)}
           />
-          <TextInput
-            placeholder="Contraseña"
-            style={styles.input}
-            secureTextEntry
-            value={user.contrasena}
-            onChangeText={(text) => handleChange('contrasena', text)}
-          />
-          <TextInput
-            placeholder="Verificar contraseña"
-            style={styles.input}
-            secureTextEntry
-            value={user.verificarContrasena}
-            onChangeText={(text) => handleChange('verificarContrasena', text)}
-          />
 
-          <TouchableOpacity style={styles.registerButton} onPress={handleSubmit}>
-            <Text style={styles.buttonText}>Registrarse</Text>
-          </TouchableOpacity>
+          {/* Contraseña con botón de ver */}
+          <View style={styles.passwordContainer}>
+            <TextInput
+              placeholder="Contraseña"
+              style={styles.passwordInput}
+              secureTextEntry={!showPassword}
+              value={form.contrasena}
+              onChangeText={(text) => handleChange('contrasena', text)}
+            />
+            <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeButton}>
+              <Ionicons
+                name={showPassword ? 'eye-outline' : 'eye-off-outline'}
+                size={22}
+                color="#6c757d"
+              />
+            </TouchableOpacity>
+          </View>
 
-          <TouchableOpacity style={styles.loginButton} onPress={() => navigation.navigate('Login')}>
-            <Text style={styles.buttonText}>Iniciar Sesión</Text>
+          {/* Verificar contraseña con botón de ver */}
+          <View style={styles.passwordContainer}>
+            <TextInput
+              placeholder="Verificar contraseña"
+              style={styles.passwordInput}
+              secureTextEntry={!showPassword2}
+              value={form.verificarContrasena}
+              onChangeText={(text) => handleChange('verificarContrasena', text)}
+            />
+            <TouchableOpacity onPress={() => setShowPassword2(!showPassword2)} style={styles.eyeButton}>
+              <Ionicons
+                name={showPassword2 ? 'eye-outline' : 'eye-off-outline'}
+                size={22}
+                color="#6c757d"
+              />
+            </TouchableOpacity>
+          </View>
+
+          <TouchableOpacity
+            style={[styles.registerButton, loading && styles.disabledButton]}
+            onPress={handleSubmit}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.buttonText}>Registrarse</Text>
+            )}
           </TouchableOpacity>
         </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </ImageBackground>
   );
 };
 
-export default Register;
-
 const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    padding: 20,
-    backgroundColor: '#D9EAFB',
-    justifyContent: 'center',
-  },
-  phoneFrame: {
-    width: 320,
-    height: 600,
-    backgroundColor: '#000',
-    borderRadius: 30,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  phoneScreen: {
+  backgroundContainer: {
     flex: 1,
     width: '100%',
-    padding: 20,
-    backgroundColor: '#fff',
-    borderRadius: 30,
+  },
+  scrollContainer: {
+    flexGrow: 1,
     justifyContent: 'center',
-    alignItems: 'center',
+  },
+  formContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+    margin: 20,
+    padding: 25,
+    borderRadius: 15,
   },
   title: {
     fontSize: 24,
@@ -169,34 +207,51 @@ const styles = StyleSheet.create({
   subtitle: {
     textAlign: 'center',
     marginBottom: 20,
-    color: '#666',
+    color: '#6c757d',
   },
   input: {
-    width: '100%',
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    padding: 12,
+    borderColor: '#ced4da',
+    borderRadius: 5,
+    padding: 10,
     marginBottom: 15,
     backgroundColor: '#fff',
   },
+  passwordContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderColor: '#ced4da',
+    borderWidth: 1,
+    borderRadius: 5,
+    backgroundColor: '#fff',
+    marginBottom: 15,
+    paddingRight: 10,
+  },
+  passwordInput: {
+    flex: 1,
+    padding: 10,
+  },
+  eyeButton: {
+    paddingLeft: 10,
+    paddingVertical: 10,
+  },
   registerButton: {
     backgroundColor: '#28a745',
-    padding: 14,
-    borderRadius: 8,
+    padding: 15,
+    borderRadius: 5,
     marginTop: 10,
-    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 50,
   },
-  loginButton: {
-    backgroundColor: '#ffc107',
-    padding: 14,
-    borderRadius: 8,
-    marginTop: 10,
-    width: '100%',
+  disabledButton: {
+    backgroundColor: '#6c757d',
   },
   buttonText: {
     color: '#fff',
-    textAlign: 'center',
     fontWeight: 'bold',
+    fontSize: 16,
   },
 });
+
+export default Register;

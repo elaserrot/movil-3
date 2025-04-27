@@ -1,111 +1,160 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Button, Alert } from 'react-native';
+import React, { useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  TextInput, 
+  TouchableOpacity, 
+  Alert,
+  ImageBackground 
+} from 'react-native';
 
-const HomeScreen = () => {
+const ForgotPassword = () => {
+  const [email, setEmail] = useState('');
   const navigation = useNavigation();
 
-  const navigateToRegister = () => {
-    navigation.navigate('Register');
-  };
+  const handleNavigateToLogin = () => {
+    navigation.navigate('Login'as never);
+  };  
 
-  const handleRecoveryEmail = () => {
-    // Mostrar el alert indicando que el correo ha sido enviado
+  const handleSubmit = () => {
+    if (!email) {
+      Alert.alert('Error', 'Por favor ingresa tu correo electrónico');
+      return;
+    }
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      Alert.alert('Error', 'El correo electrónico no es válido.');
+      return;
+    }
+    
     Alert.alert(
-      "Correo enviado",
-      "El correo de recuperación ha sido enviado con éxito.",
-      [{ text: "OK" }]
+      'Correo enviado',
+      `Se ha enviado un enlace de recuperación a ${email}`,
+      [{ text: 'OK', onPress: handleNavigateToLogin }]
     );
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.phoneFrame}>
-        <View style={styles.phoneScreen}>
-          <Text style={styles.title}>VETERINARIA{"\n"}CIUDAD CANINA</Text>
-          <View style={styles.decorativeBar} />
-          <Text style={styles.subtitle}>NUESTROS PRODUCTOS</Text>
-
-          <View style={styles.buttonContainer}>
-            <Button title="Ir a Registro" onPress={navigateToRegister} />
-          </View>
-
-          {/* Nuevo botón para el correo de recuperación */}
-          <View style={styles.buttonContainer}>
-            <Button title="Enviar correo de recuperación" onPress={handleRecoveryEmail} />
-          </View>
+    <ImageBackground 
+      source={require('../screens/fondol.png')}
+      style={styles.backgroundContainer}
+      resizeMode="cover"
+    >
+      <View style={styles.mainContainer}>
+        <View style={styles.contentContainer}>
+          <Text style={styles.title}>Recupera tu Contraseña</Text>
+          <Text style={styles.subtitle}>
+            Ingresa tu correo electrónico para restablecer tu contraseña
+          </Text>
+          
+          <TextInput
+            style={styles.input}
+            placeholder="Correo electrónico"
+            placeholderTextColor="#999"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            value={email}
+            onChangeText={setEmail}
+          />
+          
+          <TouchableOpacity 
+            style={styles.button} 
+            onPress={handleSubmit}
+          >
+            <Text style={styles.buttonText}>Enviar enlace de recuperación</Text>
+          </TouchableOpacity>
+        </View>
+        
+        <View style={styles.textContainer}>
+          <Text style={styles.normalText}>¿Recordaste tu contraseña? </Text>
+          <TouchableOpacity onPress={handleNavigateToLogin}>
+            <Text style={styles.linkText}>Inicia sesión</Text>
+          </TouchableOpacity>
         </View>
       </View>
-    </ScrollView>
+    </ImageBackground>
   );
 };
 
-export default HomeScreen;
-
 const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    padding: 20,
-    backgroundColor: '#D9EAFB',
-    justifyContent: 'center',
-  },
-  phoneFrame: {
-    width: 320,
-    height: 500,
-    backgroundColor: '#000',
-    borderRadius: 30,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  phoneScreen: {
+  backgroundContainer: {
     flex: 1,
     width: '100%',
-    padding: 20,
-    backgroundColor: '#fff',
-    borderRadius: 30,
+  },
+  mainContainer: {
+    flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
+    padding: 20,
+  },
+  contentContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    padding: 25,
+    borderRadius: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    marginBottom: 20,
   },
   title: {
+    fontSize: 24,
     fontWeight: 'bold',
-    fontSize: 20,
-    textAlign: 'center',
     color: '#014d82',
-    marginTop: 20,
-  },
-  decorativeBar: {
-    width: '80%',
-    height: 20,
-    backgroundColor: '#fff',
-    marginVertical: 10,
-    borderRadius: 10,
+    marginBottom: 10,
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,
-    fontWeight: 'bold',
     color: '#333',
-    marginVertical: 10,
+    marginBottom: 30,
+    textAlign: 'center',
+    lineHeight: 22,
   },
-  productsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: 10,
-  },
-  productContainer: {
+  input: {
+    height: 50,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    paddingHorizontal: 15,
+    marginBottom: 20,
     backgroundColor: '#fff',
-    borderRadius: 10,
-    width: 120,
-    height: 160,
+    fontSize: 16,
   },
-  buttonContainer: {
-    marginTop: 20,
-    width: '80%',
+  button: {
+    backgroundColor: '#014d82',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  textContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    padding: 15,
+    borderRadius: 10,
+  },
+  normalText: {
+    color: '#333',
+    fontSize: 15,
+  },
+  linkText: {
+    color: '#007bff',
+    fontSize: 15,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
 });
+
+export default ForgotPassword;

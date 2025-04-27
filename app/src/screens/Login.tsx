@@ -1,175 +1,249 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
-} from 'react-native';
+import { View, Text, TextInput, Alert, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, ImageBackground, Image } from 'react-native';
 import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { Ionicons } from '@expo/vector-icons'; 
 
 type RootStackParamList = {
-  HomeScreen: undefined;
+  Login: undefined;
   Register: undefined;
-  ForgotPassword: undefined
+  Home: undefined;
+  ForgotPassword: undefined;
 };
 
-type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+const Login = () => {
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
-interface UserLogin {
-  correo_electronico: string;
-  contrasena: string;
-}
-
-const Login: React.FC = () => {
-  const [user, setUser] = useState<UserLogin>({
-    correo_electronico: '',
-    contrasena: '',
+  const [form, setForm] = useState({
+    correo: '',
+    password: '',
   });
+
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
-  const navigation = useNavigation<NavigationProp>();
+  const handleChange = (name: keyof typeof form, value: string) => {
+    setForm({ ...form, [name]: value });
+  };
 
-  const handleChange = (name: keyof UserLogin, value: string) => {
-    setUser((prevUser) => ({
-      ...prevUser,
-      [name]: value,
-    }));
+  const validateFields = () => {
+    const { correo, password } = form;
+
+    if (!correo || !password) {
+      Alert.alert('Error', 'Debes completar todos los campos.');
+      return false;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(correo)) {
+      Alert.alert('Error', 'El correo electrónico no es válido.');
+      return false;
+    }
+
+    if (password.length < 8) {
+      Alert.alert('Error', 'La contraseña debe tener al menos 8 caracteres.');
+      return false;
+    }
+
+    return true;
   };
 
   const handleSubmit = async () => {
+    if (!validateFields()) return;
+
     setLoading(true);
     try {
-      const response = await axios.post('http://localhost:3001/api/auth/login', user);
-      
-      if (response.status === 200 && response.data?.token) {
-        await AsyncStorage.setItem('authToken', response.data.token);
-        Alert.alert('Éxito', 'Inicio de sesión exitoso', [
-          {
-            text: 'Continuar',
-            onPress: () => navigation.navigate('HomeScreen'), // Redirigir a HomeScreen
-          },
-        ]);
-      } else {
-        throw new Error('Credenciales incorrectas.');
+      const response = await axios.post('http://192.168.10.21:3001/api/usuarios/login', form, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        timeout: 10000,
+      });
+
+      if (response.status === 200) {
+        const usuario = response.data.usuario?.usuario || 'usuario';
+
+        Alert.alert(`Bienvenido, ${usuario}`, 'Inicio de sesión exitoso.');
+        navigation.navigate('HomeScreen' as never);
       }
-    } catch (error: any) {
-      Alert.alert('Error', error?.response?.data?.message || 'Usuario o contraseña incorrectos.');
+    } catch (error: unknown) {
+      let errorMessage = 'Verifica tus datos, correo o contraseña incorrectos.';
+      Alert.alert('Error', errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <View style={styles.container}>
-      <View style={styles.phoneFrame}>
-        <View style={styles.phoneScreen}>
-          <Text style={styles.title}>Bienvenido a Veterinaria Ciudad Canina</Text>
-          <Text style={styles.subtitle}>Ingresa tus credenciales para acceder.</Text>
+  const handleForgotPassword = () => {
+    navigation.navigate('ForgotPassword');
+  };
 
+  const handleNavigateToRegister = () => {
+    navigation.navigate('Register');
+  };
+
+  return (
+    <ImageBackground
+      source={require('../screens/fondol.png')}
+      style={{ flex: 1 }}
+      resizeMode="cover"
+    >
+      <ScrollView contentContainerStyle={styles.container}>
+        <Text style={styles.title}>Veterinaria Ciudad Canina</Text>
+
+        {/* Imagen del perro arriba de la tarjeta */}
+        <View style={styles.imageContainer}>
+          <Image 
+            source={require('../screens/perroa.png')} 
+            style={styles.image} 
+          />
+        </View>
+
+        {/* Tarjeta para los campos */}
+        <View style={styles.card}>
           <TextInput
             placeholder="Correo electrónico"
-            value={user.correo_electronico}
-            onChangeText={(text) => handleChange('correo_electronico', text)}
+            style={styles.input}
             keyboardType="email-address"
             autoCapitalize="none"
-            style={styles.input}
+            value={form.correo}
+            onChangeText={(text) => handleChange('correo', text)}
           />
 
-          <TextInput
-            placeholder="Contraseña"
-            value={user.contrasena}
-            onChangeText={(text) => handleChange('contrasena', text)}
-            secureTextEntry
-            style={styles.input}
-          />
+          <View style={styles.passwordContainer}>
+            <TextInput
+              placeholder="Contraseña"
+              style={styles.passwordInput}
+              secureTextEntry={!showPassword}
+              value={form.password}
+              onChangeText={(text) => handleChange('password', text)}
+            />
+            <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+              <Ionicons
+                name={showPassword ? 'eye-outline' : 'eye-off-outline'}
+                size={24}
+                color="#6c757d"
+              />
+            </TouchableOpacity>
+          </View>
+        </View>
 
-          <TouchableOpacity
-            style={styles.button}
-            onPress={handleSubmit}
-            disabled={loading}
-          >
-            <Text style={styles.buttonText}>
-              {loading ? 'Cargando...' : 'Ingresar'}
-            </Text>
+        <TouchableOpacity
+          style={[styles.loginButton, loading && styles.disabledButton]}
+          onPress={handleSubmit}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.buttonText}>Iniciar sesión</Text>
+          )}
+        </TouchableOpacity>
+
+        <View style={styles.linksContainer}>
+          <TouchableOpacity onPress={handleForgotPassword}>
+            <Text style={styles.linkText}>¿Olvidaste tu contraseña?</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
-            <Text style={styles.link}>¿Olvidaste tu contraseña?</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-            <Text style={styles.link}>¿Aún no tienes una cuenta? Regístrate</Text>
+          <TouchableOpacity onPress={handleNavigateToRegister}>
+            <Text style={styles.linkText}>¿No tienes cuenta? Regístrate</Text>
           </TouchableOpacity>
         </View>
-      </View>
-    </View>
+      </ScrollView>
+    </ImageBackground>
   );
 };
 
-export default Login;
-
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F5F5F5',
-  },
-  phoneFrame: {
-    width: 320,
-    height: 600,
-    backgroundColor: '#000',
-    borderRadius: 30,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 10,
-  },
-  phoneScreen: {
-    flex: 1,
+  container: {  
+    flexGrow: 1,
     padding: 20,
-    backgroundColor: '#F5F5F5',
+    justifyContent: 'center',
   },
   title: {
-    fontSize: 24,
-    textAlign: 'center',
+    fontSize: 32,
     fontWeight: 'bold',
-    color: '#007bff',
+    textAlign: 'center',
+    color: '##002244',         
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
     marginBottom: 10,
   },
-  subtitle: {
-    textAlign: 'center',
-    color: '#666',
-    marginBottom: 20,
+  imageContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',  
+    marginBottom: -45,  // Espacio entre la imagen y la tarjeta
+  },
+  image: {
+    width: 200, 
+    height: 250,
+    alignSelf: 'center', 
+  },
+  card: {
+    backgroundColor: '#ced4da', 
+    borderRadius: 10,
+    padding: 25,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 2 },
+    marginBottom: 50,
+    marginTop: 20, 
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    padding: 12,
+    borderColor: '#ced4da',
+    borderRadius: 5,
+    padding: 10,
     marginBottom: 15,
     backgroundColor: '#fff',
   },
-  button: {
-    backgroundColor: '#008000',
-    padding: 14,
-    borderRadius: 8,
-    marginBottom: 10,
+  passwordContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderColor: '#ced4da',
+    borderWidth: 1,
+    borderRadius: 5,
+    backgroundColor: '#fff',
+    paddingHorizontal: 10,
+    marginBottom: 15,
+  },
+  passwordInput: {
+    flex: 1,
+    paddingVertical: 10,
+  },
+  loginButton: {
+    backgroundColor: '#007bff',
+    padding: 15,
+    borderRadius: 5,
+    marginTop: 10,
+    alignItems: 'center',
+  },
+  disabledButton: {
+    backgroundColor: '#6c757d',
   },
   buttonText: {
     color: '#fff',
-    textAlign: 'center',
     fontWeight: 'bold',
+    fontSize: 16,
   },
-  link: {
+  linksContainer: {
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  linkText: {
     color: '#007bff',
-    textAlign: 'center',
-    marginTop: 10,
+    marginVertical: 8,
+    textDecorationLine: 'underline',
   },
 });
+
+export default Login;
